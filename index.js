@@ -12,16 +12,21 @@ app.use(express.json());
 
 // mongoDb
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clusterarfan36.opuzllc.mongodb.net/?retryWrites=true&w=majority`;
-// console.log('uri :>> ', uri);
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 async function run() {
     try {
         const categoryCollection = client.db('assignment12').collection('homeCategories');
+        const phoneCollection = client.db('assignment12').collection('allPhone');
 
-        // Read categories
+        // Read all home categories
         app.get('/categories', async (req, res) => {
             res.send(await categoryCollection.find({}).toArray());
+        });
+
+        // read specific category item
+        app.get('/category/:id', async (req, res) => {
+            res.send(await phoneCollection.find({ categoryId: req.params.id }).toArray());
         });
     }
     finally {
