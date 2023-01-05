@@ -50,9 +50,26 @@ async function run() {
             res.status(403).send({ accessToken: '' });
         });
 
+        // read userType info by (email, userType)
+        app.get('/users', async (req, res) => {
+            const query = {
+                email: req.query.email,
+            };
+            const checkUser = await usersCollection.findOne(query);
+            if (checkUser) {
+                return res.send(checkUser);
+            }
+            res.send({ userType: "not found" });
+        });
+
         // save user info by insertOne
         app.post('/users', async (req, res) => {
             const user = req.body;
+            const alreadySaved = await usersCollection.find({ email: user.email }).toArray();
+
+            if (alreadySaved.length) {
+                return res.send({ message: 'User already Saved as a Buyer' });
+            }
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
