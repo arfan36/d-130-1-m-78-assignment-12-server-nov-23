@@ -38,6 +38,18 @@ async function run() {
         const phoneCollection = client.db('assignment12').collection('allPhone');
         const usersCollection = client.db('assignment12').collection('users');
 
+        // middleware verify admin
+        // make sure you use verifyAdmin after verifyJWT
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user.userType !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        };
+
         // create and send jwt token
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -72,6 +84,16 @@ async function run() {
             }
             const result = await usersCollection.insertOne(user);
             res.send(result);
+        });
+
+        // read, verify Admin and send boolean
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await usersCollection.findOne({ email });
+            if (!user) {
+                return res.send({ isAdmin: false });
+            }
+            res.send({ isAdmin: user.userType === 'admin' });
         });
 
         // Read all home categories
