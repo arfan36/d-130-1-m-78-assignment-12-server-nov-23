@@ -63,7 +63,7 @@ async function run() {
             res.status(403).send({ accessToken: '' });
         });
 
-        // read userType info by (email, userType)
+        // read user info by email
         app.get('/users', async (req, res) => {
             const query = {
                 email: req.query.email,
@@ -87,7 +87,7 @@ async function run() {
             res.send(result);
         });
 
-        // read, verify Admin and send boolean
+        // read, verify isAdmin and send boolean
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const user = await usersCollection.findOne({ email });
@@ -110,6 +110,18 @@ async function run() {
         // read specific category item
         app.get('/category/:id', async (req, res) => {
             res.send(await phoneCollection.find({ categoryName: req.params.id }).toArray());
+        });
+
+        // read all product
+        app.get('/products', async (req, res) => {
+            res.send(await phoneCollection.find({}).toArray());
+        });
+
+        // seller: Add A Product
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await phoneCollection.insertOne(product);
+            res.send(result);
         });
 
 
@@ -142,7 +154,7 @@ async function run() {
         // });
 
         // app.get('/change', async (req, res) => {
-        //     const result = await categoryCollection.deleteMany({}.brandName);
+        //     const result = await phoneCollection.deleteMany({}.categoryId);
         //     res.send(result);
         // });
 
