@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { query } = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -87,7 +87,7 @@ async function run() {
             res.send(result);
         });
 
-        // read, verify isAdmin and send boolean
+        // read, verify isAdmin, and send boolean
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const user = await usersCollection.findOne({ email });
@@ -107,14 +107,20 @@ async function run() {
             res.send(await categoryCollection.find({}).project({ categoryName: 1 }).toArray());
         });
 
-        // read specific category item
-        app.get('/category/:id', async (req, res) => {
+        // read all, same categoryName, phone info
+        app.get('/products/:id', async (req, res) => {
             res.send(await phoneCollection.find({ categoryName: req.params.id }).toArray());
         });
 
-        // read all product
+        // seller: read all added product by current user
         app.get('/products', async (req, res) => {
-            res.send(await phoneCollection.find({}).toArray());
+            const sellerEmail = {
+                sellerEmail: req.query.sellerEmail
+            };
+            if (sellerEmail) {
+                return res.send(await phoneCollection.find(sellerEmail).toArray());
+            }
+            res.send([]);
         });
 
         // seller: Add A Product
@@ -122,6 +128,11 @@ async function run() {
             const product = req.body;
             const result = await phoneCollection.insertOne(product);
             res.send(result);
+        });
+
+        // delete product : delete one
+        app.delete('/products/:id', async (req, res) => {
+            res.send(await phoneCollection.deleteOne({ _id: ObjectId(req.params.id) }));
         });
 
 
