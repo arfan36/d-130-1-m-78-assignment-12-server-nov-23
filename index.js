@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { query } = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
@@ -96,15 +97,57 @@ async function run() {
             res.send({ isAdmin: user.userType === 'admin' });
         });
 
-        // Read all home categories
-        app.get('/categories', async (req, res) => {
+        // Read all category
+        app.get('/category', async (req, res) => {
             res.send(await categoryCollection.find({}).toArray());
+        });
+
+        // read only categoryName(property)
+        app.get('/category-names', async (req, res) => {
+            res.send(await categoryCollection.find({}).project({ categoryName: 1 }).toArray());
         });
 
         // read specific category item
         app.get('/category/:id', async (req, res) => {
-            res.send(await phoneCollection.find({ categoryId: req.params.id }).toArray());
+            res.send(await phoneCollection.find({ categoryName: req.params.id }).toArray());
         });
+
+
+        // temporary to update field
+        // // @ not recommended
+        // app.get('/change', async (req, res) => {
+        //     const filter = { brandName: "Samsung" };
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: {
+        //             categoryName: "Samsung"
+        //         }
+        //     };
+        //     const result = await phoneCollection.updateMany(filter, updatedDoc, options);
+        //     res.send(result);
+        // });
+
+        // app.get('/change', async (req, res) => {
+        //     const result = await phoneCollection.updateMany(
+        //         {},
+        //         { $unset: { brandName: "" } }
+        //     );
+        //     res.send(result);
+        // });
+
+        // app.get('/change', async (req, res) => {
+        //     const filter = { email: { $regex: "ka@ka.com" } };
+        //     const result = await bookingsCollection.deleteMany(filter);
+        //     res.send(result);
+        // });
+
+        // app.get('/change', async (req, res) => {
+        //     const result = await categoryCollection.deleteMany({}.brandName);
+        //     res.send(result);
+        // });
+
+
+
     }
     finally {
 
