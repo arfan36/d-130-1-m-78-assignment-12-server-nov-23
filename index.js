@@ -107,7 +107,7 @@ async function run() {
             res.send(await categoryCollection.find({}).project({ categoryName: 1 }).toArray());
         });
 
-        // read all, same categoryName, phone info
+        // read all, same categoryName, product info
         app.get('/products/:id', async (req, res) => {
             res.send(await phoneCollection.find({ categoryName: req.params.id }).toArray());
         });
@@ -123,6 +123,18 @@ async function run() {
             res.send([]);
         });
 
+        // update phoneCollection by //# advertise button
+        app.post('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const update = {
+                $set: {
+                    advertised: true
+                }
+            };
+            res.send(await phoneCollection.updateOne(filter, update));
+        });
+
         // seller: Add A Product
         app.post('/products', async (req, res) => {
             const product = req.body;
@@ -135,6 +147,15 @@ async function run() {
             res.send(await phoneCollection.deleteOne({ _id: ObjectId(req.params.id) }));
         });
 
+        // get advertised product
+        app.get('/advertised', async (req, res) => {
+            res.send(await phoneCollection.find({ advertised: true, paid: null }).toArray());
+        });
+
+        // limit(2) get advertised product
+        app.get('/advertised-limit', async (req, res) => {
+            res.send(await phoneCollection.find({ advertised: true, paid: null }).limit(2).toArray());
+        });
 
         // temporary to update field
         // // @ not recommended
