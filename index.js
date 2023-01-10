@@ -63,7 +63,7 @@ async function run() {
             res.status(403).send({ accessToken: '' });
         });
 
-        // read user info by email
+        // read user info(needed userType) by email
         app.get('/users', async (req, res) => {
             const query = {
                 email: req.query.email,
@@ -85,6 +85,34 @@ async function run() {
             }
             const result = await usersCollection.insertOne(user);
             res.send(result);
+        });
+
+        // ─── Admin ───────────────────────────────────────────────────
+        // admin: read all //# Sellers
+        app.get('/users/allSellers', verifyJWT, verifyAdmin, async (req, res) => {
+            res.send(await usersCollection.find({ userType: "seller" }).toArray());
+        });
+
+        // admin: read all //# Buyers
+        app.get('/users/allBuyers', verifyJWT, verifyAdmin, async (req, res) => {
+            res.send(await usersCollection.find({ userType: "buyer" }).toArray());
+        });
+
+        // admin: delete user //# delete one
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            res.send(await usersCollection.deleteOne({ _id: ObjectId(req.params.id) }));
+        });
+
+        // admin: update usersCollection, changing //# verifiedSellerStatus
+        app.post('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const update = {
+                $set: {
+                    verifiedSellerStatus: true
+                }
+            };
+            res.send(await usersCollection.updateOne(filter, update));
         });
 
         // read, verify isAdmin, and send boolean
