@@ -136,8 +136,11 @@ async function run() {
         });
 
         // read all, same categoryName, product info
-        app.get('/products/:id', async (req, res) => {
-            res.send(await phoneCollection.find({ categoryName: req.params.id }).toArray());
+        app.get('/products/:categoryName', async (req, res) => {
+            res.send(await phoneCollection.find({
+                categoryName: req.params.categoryName,
+                paid: null,
+            }).toArray());
         });
 
         // seller: read all added product by current user
