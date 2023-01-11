@@ -38,6 +38,7 @@ async function run() {
         const categoryCollection = client.db('assignment12').collection('homeCategories');
         const phoneCollection = client.db('assignment12').collection('allPhone');
         const usersCollection = client.db('assignment12').collection('users');
+        const bookedCollection = client.db('assignment12').collection('booked');
 
         // middleware verify admin
         // make sure you use verifyAdmin after verifyJWT
@@ -183,10 +184,22 @@ async function run() {
             res.send(await phoneCollection.find({ advertised: true, paid: null }).toArray());
         });
 
-        // limit(2) get advertised product
+        // limit(two): get advertised product
         app.get('/advertised-limit', async (req, res) => {
             res.send(await phoneCollection.find({ advertised: true, paid: null }).limit(2).toArray());
         });
+
+        // Buyer: Add booked product
+        app.post('/booked', async (req, res) => {
+            res.send(await bookedCollection.insertOne(req.body));
+        });
+
+        // Buyer: delete booked product
+        app.delete('/booked/:id', async (req, res) => {
+            res.send(await bookedCollection.deleteOne({ _id: ObjectId(req.params.id) }));
+        });
+
+
 
         // temporary to update field
         // // @ not recommended
