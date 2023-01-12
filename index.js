@@ -39,6 +39,7 @@ async function run() {
         const phoneCollection = client.db('assignment12').collection('allPhone');
         const usersCollection = client.db('assignment12').collection('users');
         const bookedCollection = client.db('assignment12').collection('booked');
+        const paymentCollection = client.db('assignment12').collection('payment');
 
         // middleware verify admin
         // make sure you use verifyAdmin after verifyJWT
@@ -155,7 +156,12 @@ async function run() {
             res.send([]);
         });
 
-        // update phoneCollection by //# advertise button
+        // Buyer: get specific product by id
+        // app.get('/product/:id', async (req, res) => {
+        //     res.send(await phoneCollection.findOne({ _id: ObjectId(req.params.id) }));
+        // });
+
+        // update phone advertise status by //# advertise button
         app.post('/products/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
@@ -189,6 +195,16 @@ async function run() {
             res.send(await phoneCollection.find({ advertised: true, paid: null }).limit(2).toArray());
         });
 
+        // Buyer: Read all booked item by current user
+        app.get('/booked', verifyJWT, async (req, res) => {
+            res.send(await bookedCollection.find({ buyerEmail: req.query.buyerEmail }).toArray());
+        });
+
+        // Buyer: read specific booked item
+        app.get('/booked/:id', verifyJWT, async (req, res) => {
+            res.send(await bookedCollection.findOne({ _id: ObjectId(req.params.id) }));
+        });
+
         // Buyer: Add booked product
         app.post('/booked', async (req, res) => {
             res.send(await bookedCollection.insertOne(req.body));
@@ -197,6 +213,41 @@ async function run() {
         // Buyer: delete booked product
         app.delete('/booked/:id', async (req, res) => {
             res.send(await bookedCollection.deleteOne({ _id: ObjectId(req.params.id) }));
+        });
+
+        // create payment intent
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const booking = req.body;
+            const price = booking.resalePrice;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount,
+                "payment_method_types": [
+                    "card"
+                ],
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            });
+        });
+
+        // payment
+        app.post('/payments', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            const productId = payment.productId;
+            const bookedId = payment.bookedId;
+            const update = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            };
+            await phoneCollection.updateOne({ _id: ObjectId(productId) }, update);
+            await bookedCollection.updateOne({ _id: ObjectId(bookedId) }, update);
+            res.send(result);
         });
 
 
