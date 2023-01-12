@@ -68,7 +68,7 @@ async function run() {
         });
 
         // read user info(needed userType) by email
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, async (req, res) => {
             const query = {
                 email: req.query.email,
             };
@@ -80,7 +80,7 @@ async function run() {
         });
 
         // save user info by insertOne
-        app.post('/users', async (req, res) => {
+        app.post('/users', verifyJWT, async (req, res) => {
             const user = req.body;
             const alreadySaved = await usersCollection.find({ email: user.email }).toArray();
 
@@ -120,7 +120,7 @@ async function run() {
         });
 
         // read, verify isAdmin, and send boolean
-        app.get('/users/admin/:email', async (req, res) => {
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const user = await usersCollection.findOne({ email });
             if (!user) {
@@ -130,17 +130,17 @@ async function run() {
         });
 
         // Read all category
-        app.get('/category', async (req, res) => {
+        app.get('/category', verifyJWT, async (req, res) => {
             res.send(await categoryCollection.find({}).toArray());
         });
 
         // read only categoryName(property)
-        app.get('/category-names', async (req, res) => {
+        app.get('/category-names', verifyJWT, async (req, res) => {
             res.send(await categoryCollection.find({}).project({ categoryName: 1 }).toArray());
         });
 
         // read all, same categoryName, product info
-        app.get('/products/:categoryName', async (req, res) => {
+        app.get('/products/:categoryName', verifyJWT, async (req, res) => {
             res.send(await phoneCollection.find({
                 categoryName: req.params.categoryName,
                 paid: null,
@@ -148,7 +148,7 @@ async function run() {
         });
 
         // seller: read all added product by current user
-        app.get('/products', async (req, res) => {
+        app.get('/products', verifyJWT, async (req, res) => {
             const sellerEmail = {
                 sellerEmail: req.query.sellerEmail
             };
@@ -158,13 +158,8 @@ async function run() {
             res.send([]);
         });
 
-        // Buyer: get specific product by id
-        // app.get('/product/:id', async (req, res) => {
-        //     res.send(await phoneCollection.findOne({ _id: ObjectId(req.params.id) }));
-        // });
-
         // update phone advertise status by //# advertise button
-        app.post('/products/:id', async (req, res) => {
+        app.post('/products/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const update = {
@@ -176,24 +171,24 @@ async function run() {
         });
 
         // seller: Add A Product
-        app.post('/products', async (req, res) => {
+        app.post('/products', verifyJWT, async (req, res) => {
             const product = req.body;
             const result = await phoneCollection.insertOne(product);
             res.send(result);
         });
 
         // delete product : delete one
-        app.delete('/products/:id', async (req, res) => {
+        app.delete('/products/:id', verifyJWT, async (req, res) => {
             res.send(await phoneCollection.deleteOne({ _id: ObjectId(req.params.id) }));
         });
 
         // get advertised product
-        app.get('/advertised', async (req, res) => {
+        app.get('/advertised', verifyJWT, async (req, res) => {
             res.send(await phoneCollection.find({ advertised: true, paid: null }).toArray());
         });
 
         // limit(two): get advertised product
-        app.get('/advertised-limit', async (req, res) => {
+        app.get('/advertised-limit', verifyJWT, async (req, res) => {
             res.send(await phoneCollection.find({ advertised: true, paid: null }).limit(2).toArray());
         });
 
@@ -208,12 +203,12 @@ async function run() {
         });
 
         // Buyer: Add booked product
-        app.post('/booked', async (req, res) => {
+        app.post('/booked', verifyJWT, async (req, res) => {
             res.send(await bookedCollection.insertOne(req.body));
         });
 
         // Buyer: delete booked product
-        app.delete('/booked/:id', async (req, res) => {
+        app.delete('/booked/:id', verifyJWT, async (req, res) => {
             res.send(await bookedCollection.deleteOne({ _id: ObjectId(req.params.id) }));
         });
 
@@ -240,7 +235,6 @@ async function run() {
             const payment = req.body;
             const result = await paymentCollection.insertOne(payment);
             const productId = payment.productId;
-            const bookedId = payment.bookedId;
             const update = {
                 $set: {
                     paid: true,
@@ -284,41 +278,6 @@ async function run() {
         app.get('/phoneInfo/:id', verifyJWT, async (req, res) => {
             res.send(await phoneCollection.findOne({ _id: ObjectId(req.params.id) }));
         });
-
-        // temporary to update field
-        // // @ not recommended
-        // app.get('/change', async (req, res) => {
-        //     const filter = { brandName: "Samsung" };
-        //     const options = { upsert: true };
-        //     const updatedDoc = {
-        //         $set: {
-        //             categoryName: "Samsung"
-        //         }
-        //     };
-        //     const result = await phoneCollection.updateMany(filter, updatedDoc, options);
-        //     res.send(result);
-        // });
-
-        // app.get('/change', async (req, res) => {
-        //     const result = await phoneCollection.updateMany(
-        //         {},
-        //         { $unset: { brandName: "" } }
-        //     );
-        //     res.send(result);
-        // });
-
-        // app.get('/change', async (req, res) => {
-        //     const filter = { email: { $regex: "ka@ka.com" } };
-        //     const result = await bookingsCollection.deleteMany(filter);
-        //     res.send(result);
-        // });
-
-        // app.get('/change', async (req, res) => {
-        //     const result = await phoneCollection.deleteMany({}.categoryId);
-        //     res.send(result);
-        // });
-
-
 
     }
     finally {
