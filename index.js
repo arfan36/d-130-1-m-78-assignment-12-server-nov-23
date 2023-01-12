@@ -68,7 +68,7 @@ async function run() {
         });
 
         // read user info(needed userType) by email
-        app.get('/users', verifyJWT, async (req, res) => {
+        app.get('/users', async (req, res) => {
             const query = {
                 email: req.query.email,
             };
@@ -120,7 +120,7 @@ async function run() {
         });
 
         // read, verify isAdmin, and send boolean
-        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+        app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const user = await usersCollection.findOne({ email });
             if (!user) {
@@ -130,17 +130,17 @@ async function run() {
         });
 
         // Read all category
-        app.get('/category', verifyJWT, async (req, res) => {
+        app.get('/category', async (req, res) => {
             res.send(await categoryCollection.find({}).toArray());
         });
 
         // read only categoryName(property)
-        app.get('/category-names', verifyJWT, async (req, res) => {
+        app.get('/category-names', async (req, res) => {
             res.send(await categoryCollection.find({}).project({ categoryName: 1 }).toArray());
         });
 
         // read all, same categoryName, product info
-        app.get('/products/:categoryName', verifyJWT, async (req, res) => {
+        app.get('/products/:categoryName', async (req, res) => {
             res.send(await phoneCollection.find({
                 categoryName: req.params.categoryName,
                 paid: null,
@@ -188,7 +188,7 @@ async function run() {
         });
 
         // limit(two): get advertised product
-        app.get('/advertised-limit', verifyJWT, async (req, res) => {
+        app.get('/advertised-limit', async (req, res) => {
             res.send(await phoneCollection.find({ advertised: true, paid: null }).limit(2).toArray());
         });
 
