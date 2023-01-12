@@ -248,7 +248,9 @@ async function run() {
                 }
             };
             await phoneCollection.updateOne({ _id: ObjectId(productId) }, update);
-            await bookedCollection.updateOne({ _id: ObjectId(bookedId) }, update);
+            await bookedCollection.updateOne({ productId: productId }, update);
+            await bookedCollection.insertOne(payment);
+            await wishlistCollection.deleteOne({ productId: productId });
             res.send(result);
         });
 
@@ -268,10 +270,9 @@ async function run() {
             res.send(await reportedCollection.insertOne(req.body));
         });
 
-
-        // ─── Buyer: Read wishlist product ────────────────────────────────
+        // ─── Buyer: Read All Wishlist Product By Current User ────────
         app.get('/wishlist-product', verifyJWT, async (req, res) => {
-            res.send(await wishlistCollection.find({}).toArray());
+            res.send(await wishlistCollection.find({ buyerEmail: req.query.buyerEmail }).toArray());
         });
 
         // ─── Buyer: Add Product to Wishlist ────────────────────────────────
@@ -279,6 +280,10 @@ async function run() {
             res.send(await wishlistCollection.insertOne(req.body));
         });
 
+        // get phone info
+        app.get('/phoneInfo/:id', verifyJWT, async (req, res) => {
+            res.send(await phoneCollection.findOne({ _id: ObjectId(req.params.id) }));
+        });
 
         // temporary to update field
         // // @ not recommended
