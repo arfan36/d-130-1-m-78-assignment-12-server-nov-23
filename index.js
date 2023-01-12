@@ -40,6 +40,8 @@ async function run() {
         const usersCollection = client.db('assignment12').collection('users');
         const bookedCollection = client.db('assignment12').collection('booked');
         const paymentCollection = client.db('assignment12').collection('payment');
+        const reportedCollection = client.db('assignment12').collection('reported');
+        const wishlistCollection = client.db('assignment12').collection('wishlist');
 
         // middleware verify admin
         // make sure you use verifyAdmin after verifyJWT
@@ -250,6 +252,32 @@ async function run() {
             res.send(result);
         });
 
+        // ─── Admin: Read Reported Products ─────────────────────────────────
+        app.get('/reported-product', verifyJWT, verifyAdmin, async (req, res) => {
+            res.send(await reportedCollection.find({}).toArray());
+        });
+
+        // ─── Admin: Delete Reported Product ─────────────────────────────────
+        app.delete('/reported-product/:phoneId', verifyJWT, verifyAdmin, async (req, res) => {
+            await phoneCollection.deleteOne({ _id: ObjectId(req.params.phoneId) });
+            res.send(await reportedCollection.deleteOne({ phoneId: req.params.phoneId }));
+        });
+
+        // ─── Buyer: Add Reported Products ─────────────────────────────────
+        app.post('/reported-product', verifyJWT, async (req, res) => {
+            res.send(await reportedCollection.insertOne(req.body));
+        });
+
+
+        // ─── Buyer: Read wishlist product ────────────────────────────────
+        app.get('/wishlist-product', verifyJWT, async (req, res) => {
+            res.send(await wishlistCollection.find({}).toArray());
+        });
+
+        // ─── Buyer: Add Product to Wishlist ────────────────────────────────
+        app.post('/wishlist-product', verifyJWT, async (req, res) => {
+            res.send(await wishlistCollection.insertOne(req.body));
+        });
 
 
         // temporary to update field
