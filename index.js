@@ -55,6 +55,28 @@ async function run() {
             next();
         };
 
+        // make sure you use verifySeller after verifyJWT
+        const verifySeller = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user.userType !== 'seller') {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        };
+
+        // make sure you use verifyBuyer after verifyJWT
+        const verifyBuyer = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user.userType !== 'buyer') {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        };
+
         // create and send jwt token
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -80,7 +102,7 @@ async function run() {
         });
 
         // save user info by insertOne
-        app.post('/users', verifyJWT, async (req, res) => {
+        app.post('/users', async (req, res) => {
             const user = req.body;
             const alreadySaved = await usersCollection.find({ email: user.email }).toArray();
 
@@ -148,7 +170,7 @@ async function run() {
         });
 
         // seller: read all added product by current user
-        app.get('/products', verifyJWT, async (req, res) => {
+        app.get('/products', verifyJWT, verifySeller, async (req, res) => {
             const sellerEmail = {
                 sellerEmail: req.query.sellerEmail
             };
@@ -158,8 +180,8 @@ async function run() {
             res.send([]);
         });
 
-        // update phone advertise status by //# advertise button
-        app.post('/products/:id', verifyJWT, async (req, res) => {
+        // Seller: update phone advertise status by //# advertise button
+        app.post('/products/:id', verifyJWT, verifySeller, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const update = {
@@ -171,14 +193,14 @@ async function run() {
         });
 
         // seller: Add A Product
-        app.post('/products', verifyJWT, async (req, res) => {
+        app.post('/products', verifyJWT, verifySeller, async (req, res) => {
             const product = req.body;
             const result = await phoneCollection.insertOne(product);
             res.send(result);
         });
 
-        // delete product : delete one
-        app.delete('/products/:id', verifyJWT, async (req, res) => {
+        // Seller: delete product : delete one
+        app.delete('/products/:id', verifyJWT, verifySeller, async (req, res) => {
             res.send(await phoneCollection.deleteOne({ _id: ObjectId(req.params.id) }));
         });
 
@@ -188,32 +210,32 @@ async function run() {
         });
 
         // limit(two): get advertised product
-        app.get('/advertised-limit', async (req, res) => {
+        app.get('/advertised-limit', verifyJWT, async (req, res) => {
             res.send(await phoneCollection.find({ advertised: true, paid: null }).limit(2).toArray());
         });
 
         // Buyer: Read all booked item by current user
-        app.get('/booked', verifyJWT, async (req, res) => {
+        app.get('/booked', verifyJWT, verifyBuyer, async (req, res) => {
             res.send(await bookedCollection.find({ buyerEmail: req.query.buyerEmail }).toArray());
         });
 
         // Buyer: read specific booked item
-        app.get('/booked/:id', verifyJWT, async (req, res) => {
+        app.get('/booked/:id', verifyJWT, verifyBuyer, async (req, res) => {
             res.send(await bookedCollection.findOne({ _id: ObjectId(req.params.id) }));
         });
 
         // Buyer: Add booked product
-        app.post('/booked', verifyJWT, async (req, res) => {
+        app.post('/booked', verifyJWT, verifyBuyer, async (req, res) => {
             res.send(await bookedCollection.insertOne(req.body));
         });
 
         // Buyer: delete booked product
-        app.delete('/booked/:id', verifyJWT, async (req, res) => {
+        app.delete('/booked/:id', verifyJWT, verifyBuyer, async (req, res) => {
             res.send(await bookedCollection.deleteOne({ _id: ObjectId(req.params.id) }));
         });
 
         // create payment intent
-        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+        app.post('/create-payment-intent', async (req, res) => {
             const booking = req.body;
             const price = booking.resalePrice;
             const amount = price * 100;
@@ -231,7 +253,7 @@ async function run() {
         });
 
         // payment
-        app.post('/payments', verifyJWT, async (req, res) => {
+        app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentCollection.insertOne(payment);
             const productId = payment.productId;
@@ -260,22 +282,22 @@ async function run() {
         });
 
         // ─── Buyer: Add Reported Products ─────────────────────────────────
-        app.post('/reported-product', verifyJWT, async (req, res) => {
+        app.post('/reported-product', verifyJWT, verifyBuyer, async (req, res) => {
             res.send(await reportedCollection.insertOne(req.body));
         });
 
         // ─── Buyer: Read All Wishlist Product By Current User ────────
-        app.get('/wishlist-product', verifyJWT, async (req, res) => {
+        app.get('/wishlist-product', verifyJWT, verifyBuyer, async (req, res) => {
             res.send(await wishlistCollection.find({ buyerEmail: req.query.buyerEmail }).toArray());
         });
 
         // ─── Buyer: Add Product to Wishlist ────────────────────────────────
-        app.post('/wishlist-product', verifyJWT, async (req, res) => {
+        app.post('/wishlist-product', verifyJWT, verifyBuyer, async (req, res) => {
             res.send(await wishlistCollection.insertOne(req.body));
         });
 
-        // get phone info
-        app.get('/phoneInfo/:id', verifyJWT, async (req, res) => {
+        // Buyer: payment purpose, get phone info
+        app.get('/phoneInfo/:id', async (req, res) => {
             res.send(await phoneCollection.findOne({ _id: ObjectId(req.params.id) }));
         });
 
