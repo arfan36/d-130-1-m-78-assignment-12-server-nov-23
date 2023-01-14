@@ -151,6 +151,26 @@ async function run() {
             res.send({ isAdmin: user.userType === 'admin' });
         });
 
+        // read, verify isSeller, and send boolean
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await usersCollection.findOne({ email });
+            if (!user) {
+                return res.send({ isSeller: false });
+            }
+            res.send({ isSeller: user.userType === 'seller' });
+        });
+
+        // read, verify isBuyer, and send boolean
+        app.get('/users/buyer/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await usersCollection.findOne({ email });
+            if (!user) {
+                return res.send({ isBuyer: false });
+            }
+            res.send({ isBuyer: user.userType === 'buyer' });
+        });
+
         // Read all category
         app.get('/category', async (req, res) => {
             res.send(await categoryCollection.find({}).toArray());
